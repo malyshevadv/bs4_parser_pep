@@ -1,17 +1,17 @@
 # main.py
 import logging
 import re
-import requests_cache
-
-from bs4 import BeautifulSoup
 from urllib.parse import urljoin
+
+import requests_cache
+from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import (BASE_DIR, MAIN_DOC_URL, PEP_DOC_URL,
-                       EXPECTED_STATUS, STATUS_LIST)
+from constants import (BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEP_DOC_URL,
+                       STATUS_LIST)
 from outputs import control_output
-from utils import get_response, find_tag
+from utils import find_tag, get_response
 
 
 def whats_new(session):
