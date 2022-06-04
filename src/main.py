@@ -1,6 +1,7 @@
 # main.py
 import logging
 import re
+from collections import defaultdict
 from urllib.parse import urljoin
 
 import requests_cache
@@ -8,8 +9,8 @@ from bs4 import BeautifulSoup
 from tqdm import tqdm
 
 from configs import configure_argument_parser, configure_logging
-from constants import (BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL, PEP_DOC_URL,
-                       STATUS_LIST)
+from constants import (BASE_DIR, EXPECTED_STATUS, MAIN_DOC_URL,
+                       PEP_DOC_URL)
 from outputs import control_output
 from utils import find_tag, get_response
 
@@ -17,8 +18,6 @@ from utils import find_tag, get_response
 def whats_new(session):
     whats_new_url = urljoin(MAIN_DOC_URL, 'whatsnew/')
     response = get_response(session, whats_new_url)
-    if response is None:
-        return
 
     soup = BeautifulSoup(response.text, features='lxml')
 
@@ -39,8 +38,6 @@ def whats_new(session):
 
         session = requests_cache.CachedSession()
         response = get_response(session, version_link)
-        if response is None:
-            continue
 
         soup = BeautifulSoup(response.text, features='lxml')
         h1 = find_tag(soup, 'h1')
@@ -52,8 +49,6 @@ def whats_new(session):
 
 def latest_versions(session):
     response = get_response(session, MAIN_DOC_URL)
-    if response is None:
-        return
 
     soup = BeautifulSoup(response.text, features='lxml')
 
@@ -84,8 +79,6 @@ def latest_versions(session):
 def download(session):
     downloads_url = urljoin(MAIN_DOC_URL, 'download.html')
     response = get_response(session, downloads_url)
-    if response is None:
-        return
 
     soup = BeautifulSoup(response.text, features='lxml')
 
@@ -112,8 +105,6 @@ def download(session):
 
 def pep(session):
     response = get_response(session, PEP_DOC_URL)
-    if response is None:
-        return
 
     soup = BeautifulSoup(response.text, features='lxml')
 
@@ -122,7 +113,7 @@ def pep(session):
 
     section_by_pep = tbody.find_all('tr')
 
-    counting = [0 for i in range(len(STATUS_LIST))]
+    counting = defaultdict(int)
     counter = 0
     for section in tqdm(section_by_pep):
         pep_status = find_tag(section, 'td')
@@ -145,19 +136,25 @@ def pep(session):
             lambda tag: tag.name == 'dt' and re.search('Status', tag.text)
         ).next_sibling.next_sibling
 
-        stat_val = status.text
+        status_value = status.text
 
-        if stat_val in STATUS_LIST.keys():
-            counting[STATUS_LIST[stat_val]] += 1
-        if stat_val not in EXPECTED_STATUS[preview_status]:
+        counting[status_value] = counting.get(status_value, 0) + 1
+
+        if (preview_status not in EXPECTED_STATUS.keys()):
+            logging.info(f'Неожиданный статус: \n{pep_page_link}\n'
+                         f'Статус в карточке: {status_value}\n'
+                         'Cтатус в таблице: '
+                         f'{preview_status}')
+        if (preview_status in EXPECTED_STATUS.keys() and
+           status_value not in EXPECTED_STATUS[preview_status]):
             logging.info(f'Несовпадающие статусы: \n{pep_page_link}\n'
-                         f'Статус в карточке: {stat_val}\n'
+                         f'Статус в карточке: {status_value}\n'
                          'Ожидаемые статусы: '
                          f'{EXPECTED_STATUS[preview_status]}')
         counter += 1
 
     results = [('Статус', 'Количество')]
-    results.extend([(sts, counting[STATUS_LIST[sts]]) for sts in STATUS_LIST])
+    results.extend(counting.items())
     results.append(('Total', counter))
     return results
 
