@@ -20,6 +20,8 @@ optional arguments:
 
 ### Технологии
 - Python 3.7
+- Beautiful Soup 4.9.3
+- Requests-cache 0.6.3
 
 ### Авторы
 Дарья Малышева
