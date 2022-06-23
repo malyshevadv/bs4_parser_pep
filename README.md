@@ -15,4 +15,11 @@ optional arguments:
   -h, --help            show this help message and exit
   -c, --clear-cache     Очистка кеша
   -o {pretty,file}, --output {pretty,file}
-                        Дополнительные способы вывода данных 
+                        Дополнительные способы вывода данных
+
+
+### Технологии
+- Python 3.7
+
+### Авторы
+Дарья Малышева
